@@ -18,11 +18,9 @@ class LLMAudioPlayer:
 
         if torch.cuda.is_available():
             self.device = 'cuda'
-        elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
-            self.device = 'mps'
         else:
             self.device = 'cpu'
-
+        
         self.nemo_codec_model.to(self.device)
         self.tokenizer = tokenizer
 

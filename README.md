@@ -1,8 +1,10 @@
 <div align="center">
   <img src="public/logo.png" alt="Kani TTS Logo" width="150"/>
 
-  # Kani TTS
+# Kani TTS
+
 A modular Human-Like TTS Model that generates high-quality speech from text input.
+
 </div>
 
 ## Features
@@ -18,14 +20,14 @@ A modular Human-Like TTS Model that generates high-quality speech from text inpu
 - [ ] Model release with more languages: Japanese, Turkish
 - [ ] Stable Voice cloning
 
-
 ## Architecture
 
 The project consists of three main components:
 
 1. **[main.py](main.py)** - Standalone audio generation script that creates WAV files locally
 2. **[server.py](server.py)** - FastAPI server with both complete and streaming audio endpoints
-3. **[client.html](client.html)** - Interactive web frontend for real-time audio generation
+3. **[openai.py](openai.py)** - FastAPI server openai style endpoints
+4. **[client.html](client.html)** - Interactive web frontend for real-time audio generation
 
 ### Project Structure
 
@@ -33,6 +35,7 @@ The project consists of three main components:
 kani-tts/
 ├── main.py              # Standalone TTS generation script
 ├── server.py            # FastAPI web server
+├── openai.py            # FastAPI openai style endpoints server
 ├── client.html          # Web UI frontend
 ├── config.py            # Configuration and constants
 ├── requirements.txt     # Python dependencies
@@ -53,18 +56,21 @@ kani-tts/
 ### Setup
 
 1. Clone the repository:
+
 ```bash
 git clone <repository-url>
 cd kani-tts
 ```
 
 2. Create and activate a virtual environment:
+
 ```bash
 python3 -m venv venv
 source venv/bin/activate
 ```
 
 3. Install dependencies:
+
 ```bash
 pip install -r requirements.txt
 ```
@@ -80,6 +86,7 @@ python main.py
 ```
 
 This will:
+
 - Generate speech from the prompt in [main.py:28](main.py#L28)
 - Save output to `output.wav`
 - Display timing metrics for performance analysis
@@ -87,6 +94,7 @@ This will:
 ### Option 2: FastAPI Server + Web Interface
 
 1. Start the server:
+
 ```bash
 python server.py
 ```
@@ -94,6 +102,7 @@ python server.py
 The server will start on `http://localhost:8000`
 
 2. Open the web interface:
+
 ```bash
 open client.html
 ```
@@ -103,9 +112,11 @@ Or navigate to `http://localhost:8000` in your browser
 ## API Endpoints
 
 ### `POST /tts`
+
 Generate complete audio file (non-streaming)
 
 **Request:**
+
 ```json
 {
   "text": "Hello world!",
@@ -120,6 +131,7 @@ Generate complete audio file (non-streaming)
 **Response:** WAV audio file
 
 ### `POST /stream-tts`
+
 Stream audio chunks for immediate playback
 
 **Request:** Same as `/tts`
@@ -178,6 +190,7 @@ Models are automatically downloaded from Hugging Face on first run.
 ## Browser Compatibility
 
 The web interface requires a modern browser with support for:
+
 - Web Audio API
 - Fetch API with streaming
 
@@ -188,9 +201,3 @@ See [LICENSE](LICENSE) file for details.
 ## Contributing
 
 Contributions are welcome! Please feel free to submit issues or pull requests.
-
-
-
-
-
-

@@ -1,5 +1,7 @@
 nemo_toolkit[tts]
+nemo_toolkit[collections]
 transformers @ git+https://github.com/huggingface/transformers.git
 fastapi
 uvicorn
-
+python-multipart
+faster_whisper

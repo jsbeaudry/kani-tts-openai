@@ -1,3 +1,4 @@
+
 """FastAPI server for Kani TTS with streaming support"""
 
 import io
@@ -19,7 +20,8 @@ from nemo.utils.nemo_logging import Logger
 nemo_logger = Logger()
 nemo_logger.remove_stream_handlers()
 
-
+# python convert_hf_to_gguf.py /Users/jeansauvenelbeaudry/.cache/huggingface/hub/models--jsbeaudry--haitian-french-v1/snapshots/f45dfdaa672a3b33a18eadd6482c4a2e02a80881  --outfile kani-fr-ht.f16.gguf --outtype f16
+# python convert_hf_to_gguf.py /Users/jeansauvenelbeaudry/.cache/huggingface/hub/models--jsbeaudry--haitian-french-v1/snapshots/f45dfdaa672a3b33a18eadd6482c4a2e02a80881 --outfile kani-fr-ht.q8_0.gguf --outtype q8_0
 app = FastAPI(title="Kani TTS API", version="1.0.0")
 
 # Add CORS middleware to allow client.html to connect
@@ -43,6 +45,7 @@ class TTSRequest(BaseModel):
     top_p: Optional[float] = TOP_P
     chunk_size: Optional[int] = CHUNK_SIZE
     lookback_frames: Optional[int] = LOOKBACK_FRAMES
+    speaker_id: str = None
 
 
 @app.on_event("startup")
@@ -84,7 +87,8 @@ async def generate_speech(request: TTSRequest):
         result = generator.generate(
             request.text,
             audio_writer,
-            max_tokens=request.max_tokens
+            max_tokens=request.max_tokens,
+            speaker_id=request.speaker_id
         )
 
         # Finalize and get audio
@@ -150,7 +154,8 @@ async def stream_speech(request: TTSRequest):
                 generator.generate(
                     request.text,
                     audio_writer,
-                    max_tokens=request.max_tokens
+                    max_tokens=request.max_tokens,
+                    speaker_id=request.speaker_id
                 )
                 audio_writer.finalize()
                 chunk_queue.put(("done", None))  # Signal completion

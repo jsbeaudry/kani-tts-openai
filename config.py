@@ -24,7 +24,7 @@ CHUNK_SIZE = 25  # Number of new frames to output per iteration
 LOOKBACK_FRAMES = 15  # Number of frames to include from previous context
 
 # Generation configuration
-TEMPERATURE = 0.6
+TEMPERATURE = 0.3
 TOP_P = 0.95
 REPETITION_PENALTY = 1.1
 REPETITION_CONTEXT_SIZE = 20
@@ -32,4 +32,5 @@ MAX_TOKENS = 1200
 
 # Model paths
 MODEL_NAME = "nineninesix/kani-tts-370m"
+
 CODEC_MODEL_NAME = "nvidia/nemo-nano-codec-22khz-0.6kbps-12.5fps"

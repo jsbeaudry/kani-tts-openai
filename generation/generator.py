@@ -36,21 +36,24 @@ class TTSGenerator:
     def __init__(self):
         self.model = AutoModelForCausalLM.from_pretrained(
             MODEL_NAME,
-            torch_dtype=torch.bfloat16,
-            device_map="auto",
+            dtype=torch.bfloat16,
+            # device_map="cpu",
         )
         self.tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
 
         if torch.cuda.is_available():
             self.device = 'cuda'
-        elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
-            self.device = 'mps'
         else:
             self.device = 'cpu'
-
-    def prepare_input(self, prompt):
+        
+    def prepare_input(self, prompt, speaker_id=None):
         """Build custom input_ids with special tokens"""
-        input_ids = self.tokenizer(prompt, return_tensors="pt").input_ids
+        if speaker_id is not None:
+            text_promt = f"{speaker_id.lower()}: {prompt}"
+        else :
+            text_promt = prompt
+            
+        input_ids = self.tokenizer(text_promt, return_tensors="pt").input_ids
         start_token = torch.tensor([[START_OF_HUMAN]], dtype=torch.int64)
         end_tokens = torch.tensor([[END_OF_TEXT, END_OF_HUMAN]], dtype=torch.int64)
         modified_input_ids = torch.cat([start_token, input_ids, end_tokens], dim=1)
@@ -61,9 +64,9 @@ class TTSGenerator:
 
         return modified_input_ids, attention_mask
 
-    def generate(self, prompt, audio_writer, max_tokens=MAX_TOKENS):
+    def generate(self, prompt, audio_writer, max_tokens=MAX_TOKENS, speaker_id=None, temperature=TEMPERATURE):
         """Generate speech tokens from text prompt"""
-        modified_input_ids, attention_mask = self.prepare_input(prompt)
+        modified_input_ids, attention_mask = self.prepare_input(prompt, speaker_id)
 
         point_1 = time.time()
 
@@ -83,7 +86,7 @@ class TTSGenerator:
             attention_mask=attention_mask,
             max_new_tokens=max_tokens,
             do_sample=True,
-            temperature=TEMPERATURE,
+            temperature=temperature,
             top_p=TOP_P,
             repetition_penalty=REPETITION_PENALTY,
             num_return_sequences=1,
@@ -102,6 +105,7 @@ class TTSGenerator:
         # Decode generated text from token IDs
         generated_text = self.tokenizer.decode(all_token_ids, skip_special_tokens=True)
 
+       
         return {
             'generated_text': generated_text,
             'all_token_ids': all_token_ids,
