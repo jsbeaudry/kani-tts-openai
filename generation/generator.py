@@ -23,7 +23,6 @@ class TokenIDStreamer(BaseStreamer):
             token_ids = value[0].tolist()
         else:
             token_ids = value.tolist()
-
         for token_id in token_ids:
             self.callback(token_id)
 
@@ -34,49 +33,47 @@ class TokenIDStreamer(BaseStreamer):
 
 class TTSGenerator:
     def __init__(self):
+        # Choose device
+        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+
+        # Load model and tokenizer
         self.model = AutoModelForCausalLM.from_pretrained(
             MODEL_NAME,
-            dtype=torch.bfloat16,
-            # device_map="cpu",
-        )
+            torch_dtype=torch.bfloat16 if torch.cuda.is_available() else torch.float32,
+            device_map=None  # we'll move it manually
+        ).to(self.device)
+
         self.tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
 
-        if torch.cuda.is_available():
-            self.device = 'cuda'
-        else:
-            self.device = 'cpu'
-        
     def prepare_input(self, prompt, speaker_id=None):
         """Build custom input_ids with special tokens"""
-        if speaker_id is not None:
-            text_promt = f"{speaker_id.lower()}: {prompt}"
-        else :
-            text_promt = prompt
-            
-        input_ids = self.tokenizer(text_promt, return_tensors="pt").input_ids
-        start_token = torch.tensor([[START_OF_HUMAN]], dtype=torch.int64)
-        end_tokens = torch.tensor([[END_OF_TEXT, END_OF_HUMAN]], dtype=torch.int64)
-        modified_input_ids = torch.cat([start_token, input_ids, end_tokens], dim=1)
-        modified_input_ids = modified_input_ids.to(self.device)
+        text_prompt = f"{speaker_id.lower()}: {prompt}" if speaker_id else prompt
 
-        attention_mask = torch.ones(1, modified_input_ids.shape[1], dtype=torch.int64)
-        attention_mask = attention_mask.to(self.device)
+        input_ids = self.tokenizer(text_prompt, return_tensors="pt").input_ids.to(self.device)
+        start_token = torch.tensor([[START_OF_HUMAN]], dtype=torch.int64, device=self.device)
+        end_tokens = torch.tensor([[END_OF_TEXT, END_OF_HUMAN]], dtype=torch.int64, device=self.device)
+
+        modified_input_ids = torch.cat([start_token, input_ids, end_tokens], dim=1)
+        attention_mask = torch.ones((1, modified_input_ids.shape[1]), dtype=torch.int64, device=self.device)
 
         return modified_input_ids, attention_mask
 
-    def generate(self, prompt, audio_writer, max_tokens=MAX_TOKENS, speaker_id=None, temperature=TEMPERATURE):
+    def generate(
+        self,
+        prompt,
+        audio_writer,
+        max_tokens=MAX_TOKENS,
+        speaker_id=None,
+        temperature=TEMPERATURE
+    ):
         """Generate speech tokens from text prompt"""
         modified_input_ids, attention_mask = self.prepare_input(prompt, speaker_id)
 
-        point_1 = time.time()
-
-        # Stream tokens from LLM
+        start_time = time.time()
         all_token_ids = []
 
         def on_token_generated(token_id):
-            """Callback for each generated token"""
             all_token_ids.append(token_id)
-            # print(f"[LLM] Token {len(all_token_ids)}: {token_id}")
             audio_writer.add_token(token_id)
 
         streamer = TokenIDStreamer(callback=on_token_generated)
@@ -94,22 +91,21 @@ class TTSGenerator:
             streamer=streamer,
         )
 
+        # Launch generation in a background thread
         thread = Thread(target=self.model.generate, kwargs=generation_kwargs)
         thread.start()
         thread.join()
 
-        point_2 = time.time()
+        end_time = time.time()
 
         print(f"\n[MAIN] Generation complete. Total tokens: {len(all_token_ids)}")
 
-        # Decode generated text from token IDs
         generated_text = self.tokenizer.decode(all_token_ids, skip_special_tokens=True)
 
-       
         return {
-            'generated_text': generated_text,
-            'all_token_ids': all_token_ids,
-            'generation_time': point_2 - point_1,
-            'point_1': point_1,
-            'point_2': point_2
+            "generated_text": generated_text,
+            "all_token_ids": all_token_ids,
+            "generation_time": end_time - start_time,
+            "point_1": start_time,
+            "point_2": end_time,
         }
