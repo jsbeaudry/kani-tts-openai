@@ -54,18 +54,18 @@ whisper_model = None
 # VOICE MAPPING
 # -----------------------------------------------------------------------------
 VOICE_MAPPING = {
-    # "natalie-fr": "natalie",
-    # "makati-fr": "makati",
+    "natalie-fr": "natalie",
+    "makati-fr": "makati",
     "andrew-en": "andrew",
-    "kore-en": "kore",
-    # "shimmer-ht": "shimmer",
-    # "onyx-ht": "onyx",
-    # "kore-ht": "kore",
-    # "daniel-ht": "daniel",
-    # "bob-ht": "bob",
-    # "jean-ht": "jean",
-    # "zefi-ht": "zefi",
-    # "charles-ht": "charles",
+    # "kore-en": "kore",
+    "shimmer-ht": "shimmer",
+    "onyx-ht": "onyx",
+    "kore-ht": "kore",
+    "daniel-ht": "daniel",
+    "bob-ht": "bob",
+    "jean-ht": "jean",
+    "zefi-ht": "zefi",
+    "charles-ht": "charles",
 }
 
 # -----------------------------------------------------------------------------
@@ -144,7 +144,7 @@ async def openai_speech(request: OpenAITTSRequest):
             lookback_frames=request.lookback_frames,
         )
         audio_writer.start()
-
+        print(request.input)
         generator.generate(
             request.input,
             audio_writer,
